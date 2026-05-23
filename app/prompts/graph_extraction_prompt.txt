@@ -1,0 +1,19 @@
+Return only valid JSON.
+Schema:
+{
+  "people": [{"name": "string", "aliases": ["string"]}],
+  "relationships": [
+    {
+      "source": "string",
+      "target": "string",
+      "type": "string",
+      "explanation": "string",
+      "evidence": "string"
+    }
+  ]
+}
+Rules:
+- Include article authors as people.
+- Include only real people, not companies.
+- Relationships must be directed and evidence-backed.
+- If evidence is unclear, skip the relationship.
