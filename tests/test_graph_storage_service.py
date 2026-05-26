@@ -17,6 +17,7 @@ class _PersonRepo:
     def __init__(self):
         self.names = {}
         self.counter = 0
+        self.aliases_by_id = {}
 
     async def ensure_indexes(self):
         return None
@@ -26,7 +27,9 @@ class _PersonRepo:
         if key not in self.names:
             self.counter += 1
             self.names[key] = f"p{self.counter}"
-        return self.names[key]
+        person_id = self.names[key]
+        self.aliases_by_id.setdefault(person_id, set()).update(aliases)
+        return person_id
 
 
 class _RelationshipRepo:
@@ -53,10 +56,15 @@ class _RelationshipRepo:
 @pytest.mark.asyncio
 async def test_does_not_duplicate_relationships():
     service = GraphStorageService(_ArticleRepo(), _PersonRepo(), _RelationshipRepo())
-    article = ArticleData(url="https://techcrunch.com/x", text="t", title="x", authors=[])
+    article = ArticleData(
+        url="https://techcrunch.com/x", text="t", title="x", authors=[]
+    )
     graph = LLMGraphOutput.model_validate(
         {
-            "people": [{"name": "Sam Altman", "aliases": ["Altman"]}, {"name": "Elon Musk", "aliases": []}],
+            "people": [
+                {"name": "Sam Altman", "aliases": ["Altman"]},
+                {"name": "Elon Musk", "aliases": []},
+            ],
             "relationships": [
                 {
                     "source": "Elon Musk",
@@ -85,7 +93,9 @@ async def test_does_not_duplicate_relationships():
 @pytest.mark.asyncio
 async def test_filters_noisy_people_names():
     service = GraphStorageService(_ArticleRepo(), _PersonRepo(), _RelationshipRepo())
-    article = ArticleData(url="https://techcrunch.com/x", text="t", title="x", authors=[])
+    article = ArticleData(
+        url="https://techcrunch.com/x", text="t", title="x", authors=[]
+    )
     graph = LLMGraphOutput.model_validate(
         {
             "people": [
@@ -101,5 +111,45 @@ async def test_filters_noisy_people_names():
 
     people_count, relationships_count = await service.save_graph(article, graph)
 
+    assert people_count == 1
+    assert relationships_count == 0
+
+
+@pytest.mark.asyncio
+async def test_includes_article_authors_when_llm_misses_them():
+    service = GraphStorageService(_ArticleRepo(), _PersonRepo(), _RelationshipRepo())
+    article = ArticleData(
+        url="https://techcrunch.com/x",
+        text="t",
+        title="x",
+        authors=["Sam Altman", "Mira Murati"],
+    )
+    graph = LLMGraphOutput.model_validate({"people": [], "relationships": []})
+
+    people_count, relationships_count = await service.save_graph(article, graph)
+
     assert people_count == 2
     assert relationships_count == 0
+
+
+@pytest.mark.asyncio
+async def test_keeps_organization_like_aliases():
+    person_repo = _PersonRepo()
+    service = GraphStorageService(_ArticleRepo(), person_repo, _RelationshipRepo())
+    article = ArticleData(
+        url="https://techcrunch.com/x", text="t", title="x", authors=[]
+    )
+    graph = LLMGraphOutput.model_validate(
+        {
+            "people": [{"name": "Sam Altman", "aliases": ["OpenAI CEO", "OpenAI"]}],
+            "relationships": [],
+        }
+    )
+
+    people_count, relationships_count = await service.save_graph(article, graph)
+
+    assert people_count == 1
+    assert relationships_count == 0
+    stored_aliases = next(iter(person_repo.aliases_by_id.values()))
+    assert "OpenAI CEO" in stored_aliases
+    assert "OpenAI" in stored_aliases

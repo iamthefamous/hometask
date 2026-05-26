@@ -92,6 +92,13 @@ pytest -q
 
 Unit tests use mocked dependencies and do not call a real LLM.
 
+## Pre-commit
+
+```bash
+pre-commit install
+pre-commit run --all-files
+```
+
 ## LLM Provider Setup
 
 `gpt-4o-mini` via OpenAI requires an API key. For free local usage, run Ollama and set:
@@ -132,6 +139,20 @@ To convert long canonical names into short canonical names and keep long variant
 ```bash
 python scripts/normalize_people_to_short_names.py
 python scripts/normalize_people_to_short_names.py --apply
+```
+
+To drop only graph collections (`articles`, `people`, `relationships`) while keeping the database:
+
+```bash
+python scripts/drop_graph_collections.py
+python scripts/drop_graph_collections.py --apply
+```
+
+To drop the entire configured MongoDB database:
+
+```bash
+python scripts/drop_database.py
+python scripts/drop_database.py --apply
 ```
 
 ## Future Improvements

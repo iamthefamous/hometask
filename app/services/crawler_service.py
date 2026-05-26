@@ -22,7 +22,9 @@ class CrawlerService:
         listing_urls = self.build_listing_urls(pages)
         found_urls: set[str] = set()
 
-        async with httpx.AsyncClient(timeout=self.timeout_seconds, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout_seconds, follow_redirects=True
+        ) as client:
             for listing_url in listing_urls:
                 resp = await client.get(listing_url)
                 resp.raise_for_status()
@@ -30,7 +32,10 @@ class CrawlerService:
                 for anchor in soup.select("a[href]"):
                     href = anchor.get("href", "")
                     absolute = urljoin(listing_url, href)
-                    if absolute.startswith("https://techcrunch.com/") and "/20" in absolute:
+                    if (
+                        absolute.startswith("https://techcrunch.com/")
+                        and "/20" in absolute
+                    ):
                         found_urls.add(absolute)
 
         return sorted(found_urls)

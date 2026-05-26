@@ -13,7 +13,9 @@ class ArticleExtractorService:
         self.timeout_seconds = timeout_seconds
 
     async def extract(self, url: str) -> ArticleData:
-        async with httpx.AsyncClient(timeout=self.timeout_seconds, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout_seconds, follow_redirects=True
+        ) as client:
             response = await client.get(url)
             response.raise_for_status()
             html = response.text
@@ -26,7 +28,9 @@ class ArticleExtractorService:
             for tag in soup.select('[rel="author"], .author, [class*="author"]')
             if collapse_whitespace(tag.get_text())
         ]
-        authors = [name for name in dict.fromkeys(raw_authors) if is_probable_person_name(name)]
+        authors = [
+            name for name in dict.fromkeys(raw_authors) if is_probable_person_name(name)
+        ]
 
         published_at = None
         time_node = soup.select_one("time[datetime]")
@@ -35,7 +39,9 @@ class ArticleExtractorService:
 
         text = trafilatura.extract(html) or ""
         if not text.strip():
-            paragraph_text = " ".join(p.get_text(" ", strip=True) for p in soup.select("article p"))
+            paragraph_text = " ".join(
+                p.get_text(" ", strip=True) for p in soup.select("article p")
+            )
             text = collapse_whitespace(paragraph_text)
 
         if not text:

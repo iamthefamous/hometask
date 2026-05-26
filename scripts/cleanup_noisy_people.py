@@ -11,8 +11,8 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from app.core.config import settings
-from app.utils.normalization import is_probable_person_name
+from app.core.config import settings  # noqa: E402
+from app.utils.normalization import is_probable_person_name  # noqa: E402
 
 
 async def cleanup(dry_run: bool) -> None:
@@ -59,7 +59,9 @@ async def cleanup(dry_run: bool) -> None:
 
 
 def parse_args() -> Any:
-    parser = argparse.ArgumentParser(description="Remove noisy person records from MongoDB.")
+    parser = argparse.ArgumentParser(
+        description="Remove noisy person records from MongoDB."
+    )
     parser.add_argument(
         "--apply",
         action="store_true",

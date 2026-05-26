@@ -22,7 +22,9 @@ def get_pipeline_service() -> PipelineService:
     )
     return PipelineService(
         crawler=CrawlerService(timeout_seconds=settings.request_timeout_seconds),
-        extractor=ArticleExtractorService(timeout_seconds=settings.request_timeout_seconds),
+        extractor=ArticleExtractorService(
+            timeout_seconds=settings.request_timeout_seconds
+        ),
         llm=LLMAnalysisService(),
         storage=storage,
         max_concurrent_articles=settings.max_concurrent_articles,

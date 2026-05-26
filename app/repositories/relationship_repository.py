@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo.errors import DuplicateKeyError
 
 from app.utils.normalization import normalize_text
 
@@ -64,12 +64,20 @@ class RelationshipRepository:
             },
             "created_at": datetime.now(timezone.utc),
         }
-        await self.collection.insert_one(doc)
-        return True
+        try:
+            await self.collection.insert_one(doc)
+            return True
+        except DuplicateKeyError:
+            # Another concurrent task inserted the same dedup key first.
+            return False
 
     async def get_person_relationships(self, person_id: str) -> dict:
-        outgoing = await self.collection.find({"source_person_id": person_id}).to_list(length=1000)
-        incoming = await self.collection.find({"target_person_id": person_id}).to_list(length=1000)
+        outgoing = await self.collection.find({"source_person_id": person_id}).to_list(
+            length=1000
+        )
+        incoming = await self.collection.find({"target_person_id": person_id}).to_list(
+            length=1000
+        )
 
         def serialize(rows: list[dict]) -> list[dict]:
             return [
