@@ -1,7 +1,19 @@
-Return only valid JSON.
-Schema:
+You are extracting a people/relationship graph from one article.
+
+Output contract:
+- Return exactly one valid JSON object.
+- Do not return markdown, code fences, comments, or any text outside JSON.
+- Top-level keys must be exactly: "people", "relationships".
+- If nothing is found, return: {"people": [], "relationships": []}
+
+Required JSON shape:
 {
-  "people": [{"name": "string", "aliases": ["string"]}],
+  "people": [
+    {
+      "name": "string",
+      "aliases": ["string"]
+    }
+  ],
   "relationships": [
     {
       "source": "string",
@@ -12,8 +24,25 @@ Schema:
     }
   ]
 }
-Rules:
+
+People rules:
 - Include article authors as people.
-- Include only real people, not companies.
-- Relationships must be directed and evidence-backed.
-- If evidence is unclear, skip the relationship.
+- Include only real human people in "people".
+- Never include companies, products, teams, projects, or institutions as people.
+- Keep one canonical person name and put alternate references in "aliases".
+- Do not use blank strings. Do not use null.
+
+Relationship rules:
+- Relationships are directed: source -> type -> target.
+- "source" and "target" must be people names.
+- Each relationship must be supported by explicit article evidence.
+- "evidence" must be a short quote-like sentence from the article text.
+- If evidence is weak or ambiguous, do not output that relationship.
+- Do not infer relationships that are not stated or strongly implied in the article.
+- Do not output duplicate relationships with the same meaning and evidence.
+
+Final self-check before output:
+- JSON parses without errors.
+- Every person has non-empty "name".
+- Every relationship has non-empty "source", "target", "type", "explanation", and "evidence".
+- No extra top-level keys.
