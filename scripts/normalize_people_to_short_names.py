@@ -4,15 +4,14 @@ from collections import defaultdict
 from pathlib import Path
 import sys
 
-from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from app.core.config import settings
-from app.utils.normalization import extract_canonical_person_name, normalize_text
+from app.core.config import settings  # noqa: E402
+from app.utils.normalization import extract_canonical_person_name, normalize_text  # noqa: E402
 
 
 async def normalize_people(apply_changes: bool) -> None:
@@ -31,7 +30,15 @@ async def normalize_people(apply_changes: bool) -> None:
             continue
         groups[normalize_text(canonical)].append(person)
 
-    merge_groups = [rows for rows in groups.values() if len(rows) > 1 or any(extract_canonical_person_name(r["canonical_name"]) != r["canonical_name"] for r in rows)]
+    merge_groups = [
+        rows
+        for rows in groups.values()
+        if len(rows) > 1
+        or any(
+            extract_canonical_person_name(r["canonical_name"]) != r["canonical_name"]
+            for r in rows
+        )
+    ]
     print(f"Groups needing normalization: {len(merge_groups)}")
 
     updates = 0
@@ -42,7 +49,10 @@ async def normalize_people(apply_changes: bool) -> None:
         rows_sorted = sorted(rows, key=lambda r: str(r["_id"]))
         primary = rows_sorted[0]
         primary_id = str(primary["_id"])
-        short_name = extract_canonical_person_name(primary["canonical_name"]) or primary["canonical_name"]
+        short_name = (
+            extract_canonical_person_name(primary["canonical_name"])
+            or primary["canonical_name"]
+        )
 
         alias_set = set(primary.get("aliases", []))
         article_ids = set(primary.get("article_ids", []))
@@ -65,11 +75,21 @@ async def normalize_people(apply_changes: bool) -> None:
             if apply_changes:
                 src = await rel_col.update_many(
                     {"source_person_id": old_id},
-                    {"$set": {"source_person_id": primary_id, "source_name": short_name}},
+                    {
+                        "$set": {
+                            "source_person_id": primary_id,
+                            "source_name": short_name,
+                        }
+                    },
                 )
                 tgt = await rel_col.update_many(
                     {"target_person_id": old_id},
-                    {"$set": {"target_person_id": primary_id, "target_name": short_name}},
+                    {
+                        "$set": {
+                            "target_person_id": primary_id,
+                            "target_name": short_name,
+                        }
+                    },
                 )
                 rel_updates += src.modified_count + tgt.modified_count
                 await people_col.delete_one({"_id": row["_id"]})
@@ -91,15 +111,21 @@ async def normalize_people(apply_changes: bool) -> None:
 
     print(f"People to update: {updates}")
     print(f"People to delete (merged duplicates): {deletes}")
-    print(f"Relationships to repoint (modified): {rel_updates if apply_changes else 'dry-run'}")
+    print(
+        f"Relationships to repoint (modified): {rel_updates if apply_changes else 'dry-run'}"
+    )
     print("Applied" if apply_changes else "Dry-run only")
 
     client.close()
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Normalize person records to short canonical names.")
-    parser.add_argument("--apply", action="store_true", help="Persist changes to MongoDB")
+    parser = argparse.ArgumentParser(
+        description="Normalize person records to short canonical names."
+    )
+    parser.add_argument(
+        "--apply", action="store_true", help="Persist changes to MongoDB"
+    )
     return parser.parse_args()
 
 

@@ -28,7 +28,9 @@ class _Client:
 
 @pytest.mark.asyncio
 async def test_crawler_extracts_article_urls(monkeypatch):
-    monkeypatch.setattr("app.services.crawler_service.httpx.AsyncClient", lambda **_: _Client())
+    monkeypatch.setattr(
+        "app.services.crawler_service.httpx.AsyncClient", lambda **_: _Client()
+    )
     service = CrawlerService()
     urls = await service.get_article_urls(1)
     assert urls == [

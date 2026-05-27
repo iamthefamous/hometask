@@ -7,14 +7,24 @@ from app.api.people import get_person, list_people
 class _PersonRepo:
     async def list_people(self, page, limit):
         return (
-            [{"_id": "665f", "canonical_name": "Sam Altman", "aliases": ["Altman", "OpenAI CEO"]}],
+            [
+                {
+                    "_id": "665f",
+                    "canonical_name": "Sam Altman",
+                    "aliases": ["Altman", "OpenAI CEO"],
+                }
+            ],
             1,
         )
 
     async def get_person(self, person_id):
-        if person_id == "missing":
+        if person_id in {"missing", "not-an-object-id"}:
             return None
-        return {"_id": "665f", "canonical_name": "Sam Altman", "aliases": ["Altman", "OpenAI CEO"]}
+        return {
+            "_id": "665f",
+            "canonical_name": "Sam Altman",
+            "aliases": ["Altman", "OpenAI CEO"],
+        }
 
 
 class _RelationshipRepo:
@@ -44,6 +54,17 @@ async def test_person_detail_404():
     with pytest.raises(HTTPException) as exc:
         await get_person(
             person_id="missing",
+            person_repo=_PersonRepo(),
+            relationship_repo=_RelationshipRepo(),
+        )
+    assert exc.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_person_detail_invalid_object_id_404():
+    with pytest.raises(HTTPException) as exc:
+        await get_person(
+            person_id="not-an-object-id",
             person_repo=_PersonRepo(),
             relationship_repo=_RelationshipRepo(),
         )

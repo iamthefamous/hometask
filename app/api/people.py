@@ -3,7 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.api.deps import get_person_repository, get_relationship_repository
 from app.repositories.person_repository import PersonRepository
 from app.repositories.relationship_repository import RelationshipRepository
-from app.schemas.people import PeopleListResponse, PersonDetailResponse, PersonListItem, PersonRelationships
+from app.schemas.people import (
+    PeopleListResponse,
+    PersonDetailResponse,
+    PersonListItem,
+    PersonRelationships,
+)
 
 router = APIRouter(prefix="/people", tags=["people"])
 

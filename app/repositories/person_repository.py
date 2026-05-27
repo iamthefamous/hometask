@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from bson import ObjectId
+from bson.errors import InvalidId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo.errors import DuplicateKeyError
 
@@ -22,7 +23,9 @@ class PersonRepository:
             return person
         return await self.collection.find_one({"aliases": name})
 
-    async def upsert_person(self, canonical_name: str, aliases: list[str], article_id: str) -> str:
+    async def upsert_person(
+        self, canonical_name: str, aliases: list[str], article_id: str
+    ) -> str:
         normalized = normalize_text(canonical_name)
         now = datetime.now(timezone.utc)
         alias_values = [a for a in aliases if a and a != canonical_name]
@@ -66,9 +69,18 @@ class PersonRepository:
 
     async def list_people(self, page: int, limit: int) -> tuple[list[dict], int]:
         total = await self.collection.count_documents({})
-        cursor = self.collection.find({}).sort("canonical_name", 1).skip((page - 1) * limit).limit(limit)
+        cursor = (
+            self.collection.find({})
+            .sort("canonical_name", 1)
+            .skip((page - 1) * limit)
+            .limit(limit)
+        )
         rows = await cursor.to_list(length=limit)
         return rows, total
 
     async def get_person(self, person_id: str):
-        return await self.collection.find_one({"_id": ObjectId(person_id)})
+        try:
+            object_id = ObjectId(person_id)
+        except InvalidId:
+            return None
+        return await self.collection.find_one({"_id": object_id})

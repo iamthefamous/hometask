@@ -34,3 +34,13 @@ async def health_check():
     db = get_database()
     await db.command("ping")
     return {"status": "ok"}
+
+
+# TODO: user real LLM path end-to-end, with stable prompt/output validation
+# TODO: Create relationships
+# TODO: run full pretest
+# TODO: FIX env consistecny MONGO_URI
+# TODO: prepare one clean seeded dataset for predictable results
+
+# TODO: Learn what my code is actually is doint
+# TODO: Write down the the pipline and other path for more understanding

@@ -27,6 +27,46 @@ _ROLE_WORDS = {
     "development",
     "senior",
 }
+_ORG_MARKERS = (
+    " inc",
+    " llc",
+    " ltd",
+    " corp",
+    " company",
+    " technologies",
+    " labs",
+    " openai",
+    " startup",
+    " firm",
+    " group",
+    " holdings",
+    " venture",
+    " ventures",
+    " capital",
+)
+
+
+def looks_like_bio_or_metadata(value: str) -> bool:
+    lowered = value.strip().lower()
+    if not lowered:
+        return True
+    if any(marker in lowered for marker in _BANNED_SUBSTRINGS):
+        return True
+    return " is a " in lowered or " you can contact " in lowered
+
+
+def looks_like_organization_name(value: str) -> bool:
+    text = value.strip()
+    lowered = text.lower()
+    if not text:
+        return False
+    if any(marker in f" {lowered} " for marker in _ORG_MARKERS):
+        return True
+    # "OpenAI", "iPhone", "DeepMind" style tokens are unlikely to be person names.
+    for token in re.split(r"\s+", text):
+        if any(ch.isupper() for ch in token[1:]):
+            return True
+    return False
 
 
 def normalize_text(value: str) -> str:
@@ -39,8 +79,9 @@ def is_probable_person_name(value: str) -> bool:
     text = value.strip()
     if not text:
         return False
-    lowered = text.lower()
-    if any(marker in lowered for marker in _BANNED_SUBSTRINGS):
+    if looks_like_bio_or_metadata(text):
+        return False
+    if looks_like_organization_name(text):
         return False
     if len(text) > 80:
         return False

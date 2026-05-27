@@ -16,3 +16,11 @@ def test_extracts_short_name_from_bio_text():
 
 def test_returns_none_for_non_name_string():
     assert extract_canonical_person_name("Audience Development Manager") is None
+
+
+def test_returns_none_for_organization_name_openai():
+    assert extract_canonical_person_name("OpenAI") is None
+
+
+def test_returns_none_for_organization_name_with_suffix():
+    assert extract_canonical_person_name("Anthropic PBC") is None
