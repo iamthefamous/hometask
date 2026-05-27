@@ -193,3 +193,55 @@ python scripts/drop_database.py --apply
 - Add extraction evaluation dataset.
 - Add confidence scoring.
 - Add hallucination filters.
+
+---
+
+## Development Process
+
+This project was implemented with the help of **Codex 5.3 Agent**.
+
+Before implementation, I prepared project planning documents to guide the development process.
+
+### `AGENTS.md`
+
+I wrote `AGENTS.md` to define how the coding agent should work on the project.
+
+It includes:
+
+- project rules
+- implementation requirements
+- coding standards
+- expected behavior
+- definition of done
+- testing expectations
+- architectural constraints
+- instructions for safe and consistent changes
+
+This file helped keep the implementation structured and consistent across the project.
+
+### `info.md`
+
+I also wrote `info.md` as a brainstorming and planning document.
+
+It includes:
+
+- the main project idea
+- expected API endpoints
+- the project pipeline
+- technology choices
+- justification for using FastAPI
+- justification for using MongoDB
+- how articles should be crawled and processed
+- how the LLM should extract people and relationships
+- how the extracted graph data should be stored
+- possible limitations and future improvements
+
+This document was used as the initial project design before implementation.
+
+### AI-Assisted Development Note
+
+The project was not generated randomly by an AI tool.
+
+The development process followed my own planning documents, project requirements, and architectural decisions. Codex 5.3 Agent was used as an implementation assistant to speed up development, generate code, and help connect the different parts of the system.
+
+The main design decisions, pipeline structure, endpoint planning, and requirements were prepared in advance through `AGENTS.md` and `info.md`.
