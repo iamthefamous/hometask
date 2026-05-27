@@ -160,3 +160,36 @@ python scripts/drop_database.py --apply
 - Add robust LLM provider integration with retries and JSON schema enforcement.
 - Add integration tests with fixture HTML snapshots.
 - Add stronger alias resolution and confidence scoring.
+
+
+
+## Possible Future Improvements
+
+### Product Improvements
+
+- Add graph visualization.
+- Add search by person name.
+- Add search by relationship type.
+- Add article-level graph view.
+- Add confidence scores for relationships.
+- Add manual review/editing interface.
+- Add support for more news sources.
+- Add source credibility metadata.
+### Engineering Improvements
+
+- Add background job queue.
+- Add Redis caching.
+- Add structured logs.
+- Add OpenAPI examples.
+- Add better test coverage.
+
+### AI Improvements
+
+- Improve extraction prompt.
+- Add fixed relationship taxonomy.
+- Add validation prompt.
+- Add model fallback.
+- Add local LLM support documentation.
+- Add extraction evaluation dataset.
+- Add confidence scoring.
+- Add hallucination filters.
