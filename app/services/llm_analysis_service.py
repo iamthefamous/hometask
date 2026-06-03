@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 
 import httpx
+from google import genai
 from pydantic import ValidationError
 
 from app.core.config import settings
@@ -25,7 +26,11 @@ class LLMAnalysisService:
             prompt_path.read_text(encoding="utf-8") if prompt_path.exists() else ""
         )
         self.provider = settings.llm_provider.lower().strip()
-        self.model = settings.openai_model
+        self.model = (
+            settings.gemini_model
+            if self.provider == "gemini"
+            else settings.openai_model
+        )
         self.max_article_chars = settings.max_llm_article_chars
         self.max_retries = settings.llm_max_retries
         self.retry_base_delay_seconds = settings.llm_retry_base_delay_seconds
@@ -147,9 +152,9 @@ class LLMAnalysisService:
     async def _call_gemini_generate_content(
         self, article: ArticleData
     ) -> tuple[dict, int]:
-        if not settings.llm_api_key:
+        if not settings.gemini_api_key:
             raise LLMValidationError(
-                "LLM_API_KEY (or GEMINI_API_KEY alias) is required when LLM_PROVIDER=gemini"
+                "GEMINI_API_KEY is required when LLM_PROVIDER=gemini"
             )
 
         article_text = self._truncate_article_text(article.text)
@@ -162,33 +167,25 @@ class LLMAnalysisService:
             f"Article Text:\n{article_text}"
         )
 
-        headers = {
-            "Content-Type": "application/json",
-            "X-goog-api-key": settings.llm_api_key,
-        }
-        body = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {
-                "temperature": 0,
-                "responseMimeType": "application/json",
-            },
-        }
-        endpoint = (
-            f"{settings.llm_base_url.rstrip('/')}/models/{self.model}:generateContent"
-        )
-        timeout = settings.request_timeout_seconds
-
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            data = await self._post_json_with_retries(
-                client, endpoint, headers, body, "Gemini API"
-            )
-
+        client = genai.Client(api_key=settings.gemini_api_key)
         try:
-            text = data["candidates"][0]["content"]["parts"][0]["text"]
-        except (KeyError, IndexError, TypeError) as exc:
+            response = await asyncio.to_thread(
+                client.models.generate_content,
+                model=settings.gemini_model,
+                contents=prompt,
+                config={
+                    "temperature": 0,
+                    "response_mime_type": "application/json",
+                },
+            )
+        except Exception as exc:
+            raise LLMValidationError(f"Gemini API request failed: {exc}") from exc
+
+        text = getattr(response, "text", None)
+        if not isinstance(text, str) or not text.strip():
             raise LLMValidationError(
-                f"Gemini response is not valid content JSON: {exc}"
-            ) from exc
+                "Gemini response is not valid content JSON: missing text"
+            )
 
         cleaned = text.strip()
         if cleaned.startswith("```"):
@@ -197,7 +194,7 @@ class LLMAnalysisService:
                 cleaned = cleaned[:-3].strip()
 
         try:
-            return json.loads(cleaned), self._extract_gemini_total_tokens(data)
+            return json.loads(cleaned), self._extract_gemini_total_tokens(response)
         except json.JSONDecodeError as exc:
             raise LLMValidationError(
                 f"Gemini output is not valid graph JSON: {exc}"
@@ -212,11 +209,11 @@ class LLMAnalysisService:
             return total
         return 0
 
-    def _extract_gemini_total_tokens(self, data: dict) -> int:
-        usage = data.get("usageMetadata")
-        if not isinstance(usage, dict):
+    def _extract_gemini_total_tokens(self, response: object) -> int:
+        usage = getattr(response, "usage_metadata", None)
+        if usage is None:
             return 0
-        total = usage.get("totalTokenCount")
+        total = getattr(usage, "total_token_count", None)
         if isinstance(total, int):
             return total
         return 0

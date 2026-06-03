@@ -1,6 +1,7 @@
+from app.core.config import Settings
 from app.schemas.article import ArticleData
-from app.utils.exceptions import LLMValidationError
 from app.services.llm_analysis_service import LLMAnalysisService
+from app.utils.exceptions import LLMValidationError
 
 
 def _article() -> ArticleData:
@@ -10,6 +11,21 @@ def _article() -> ArticleData:
         authors=["Sam Altman"],
         text="Sam Altman discussed model safety with Elon Musk.",
     )
+
+
+def test_gemini_model_defaults_to_flash_lite(monkeypatch):
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    config = Settings(_env_file=None)
+
+    assert config.gemini_model == "gemini-3.1-flash-lite"
+
+
+def test_max_concurrent_agents_alias(monkeypatch):
+    monkeypatch.setenv("MAX_CONCURRENT_AGENTS", "9")
+    monkeypatch.delenv("MAX_CONCURRENT_ARTICLES", raising=False)
+    config = Settings(_env_file=None)
+
+    assert config.max_concurrent_articles == 9
 
 
 async def test_llm_analysis_service_mock_returns_authors(monkeypatch):
@@ -131,7 +147,7 @@ async def test_gemini_provider_uses_generate_content(monkeypatch):
         "app.services.llm_analysis_service.settings.llm_provider", "gemini"
     )
     monkeypatch.setattr(
-        "app.services.llm_analysis_service.settings.llm_api_key", "test-key"
+        "app.services.llm_analysis_service.settings.gemini_api_key", "test-key"
     )
 
     service = LLMAnalysisService()
@@ -161,6 +177,52 @@ async def test_gemini_provider_uses_generate_content(monkeypatch):
 
     assert len(result.people) == 2
     assert len(result.relationships) == 1
+
+
+async def test_gemini_provider_calls_google_genai_with_configured_model(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.llm_analysis_service.settings.llm_provider", "gemini"
+    )
+    monkeypatch.setattr(
+        "app.services.llm_analysis_service.settings.gemini_api_key", "test-key"
+    )
+    monkeypatch.setattr(
+        "app.services.llm_analysis_service.settings.gemini_model",
+        "gemini-3.1-flash-lite",
+    )
+
+    calls = {}
+
+    class _Usage:
+        total_token_count = 7
+
+    class _Response:
+        text = '{"people": [], "relationships": []}'
+        usage_metadata = _Usage()
+
+    class _Models:
+        def generate_content(self, *, model, contents, config):
+            calls["model"] = model
+            calls["contents"] = contents
+            calls["config"] = config
+            return _Response()
+
+    class _Client:
+        def __init__(self, *, api_key):
+            calls["api_key"] = api_key
+            self.models = _Models()
+
+    monkeypatch.setattr("app.services.llm_analysis_service.genai.Client", _Client)
+
+    service = LLMAnalysisService()
+    graph, tokens = await service._call_gemini_generate_content(_article())
+
+    assert calls["api_key"] == "test-key"
+    assert calls["model"] == "gemini-3.1-flash-lite"
+    assert "Article Text:" in calls["contents"]
+    assert calls["config"]["response_mime_type"] == "application/json"
+    assert graph == {"people": [], "relationships": []}
+    assert tokens == 7
 
 
 async def test_openai_fallback_to_second_model_on_rate_limit(monkeypatch):
