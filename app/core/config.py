@@ -21,7 +21,15 @@ class Settings(BaseSettings):
     )
     openai_model: str = Field(
         default="gpt-4o-mini",
-        validation_alias=AliasChoices("OPENAI_MODEL", "LLM_MODEL", "GEMINI_MODEL"),
+        validation_alias=AliasChoices("OPENAI_MODEL", "LLM_MODEL"),
+    )
+    gemini_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("GEMINI_API_KEY"),
+    )
+    gemini_model: str = Field(
+        default="gemini-3.1-flash-lite",
+        validation_alias=AliasChoices("GEMINI_MODEL"),
     )
     llm_provider: str = Field(
         default="mock",
@@ -35,10 +43,15 @@ class Settings(BaseSettings):
     )
     llm_api_key: str = Field(
         default="",
-        validation_alias=AliasChoices("LLM_API_KEY", "GEMINI_API_KEY"),
+        validation_alias=AliasChoices("LLM_API_KEY"),
     )
 
-    max_concurrent_articles: int = 5
+    max_concurrent_articles: int = Field(
+        default=5,
+        validation_alias=AliasChoices(
+            "MAX_CONCURRENT_ARTICLES", "MAX_CONCURRENT_AGENTS"
+        ),
+    )
     request_timeout_seconds: int = 30
     max_llm_article_chars: int = 24000
     llm_max_retries: int = 4
