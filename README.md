@@ -101,7 +101,23 @@ pre-commit run --all-files
 
 ## LLM Provider Setup
 
-`gpt-4o-mini` via OpenAI requires an API key. For free local usage, run Ollama and set:
+Gemini uses the official Google Gen AI SDK:
+
+```env
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=your_api_key_here
+GEMINI_MODEL=gemini-3.1-flash-lite
+```
+
+`GEMINI_MODEL` is optional and defaults to `gemini-3.1-flash-lite`.
+
+Limit concurrent article workers in the parallel article-processing pipeline with:
+
+```env
+MAX_CONCURRENT_AGENTS=5
+```
+
+For free local usage, run Ollama and set:
 
 ```env
 LLM_PROVIDER=ollama
