@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from app.services.pipeline_service import PipelineService
@@ -61,3 +63,52 @@ async def test_rescan_logs_total_tokens(caplog):
         "rescan_done" in rec.message and "total_tokens=42" in rec.message
         for rec in caplog.records
     )
+
+
+class _CrawlerWithUrls:
+    def __init__(self, urls):
+        self.urls = urls
+
+    async def get_article_urls(self, pages: int):
+        return self.urls
+
+
+class _TrackingExtractor:
+    def __init__(self):
+        self.active = 0
+        self.max_active = 0
+
+    async def extract(self, url: str):
+        self.active += 1
+        self.max_active = max(self.max_active, self.active)
+        await asyncio.sleep(0.01)
+        self.active -= 1
+        return type(
+            "A",
+            (),
+            {
+                "url": url,
+                "title": "Example",
+                "authors": [],
+                "model_dump": lambda self: {"url": url, "text": "t"},
+            },
+        )()
+
+
+@pytest.mark.asyncio
+async def test_rescan_processes_urls_in_configured_llm_batches():
+    urls = [f"https://example.com/{index}" for index in range(6)]
+    extractor = _TrackingExtractor()
+    svc = PipelineService(
+        _CrawlerWithUrls(urls),
+        extractor,
+        _LLM(),
+        _Storage(),
+        max_concurrent_articles=6,
+        llm_article_batch_size=2,
+    )
+
+    result = await svc.rescan(1)
+
+    assert result.processed == 6
+    assert extractor.max_active == 2

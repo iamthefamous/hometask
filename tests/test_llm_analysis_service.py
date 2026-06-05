@@ -28,6 +28,13 @@ def test_max_concurrent_agents_alias(monkeypatch):
     assert config.max_concurrent_articles == 9
 
 
+def test_llm_article_batch_size_comes_from_env(monkeypatch):
+    monkeypatch.setenv("LLM_ARTICLE_BATCH_SIZE", "3")
+    config = Settings(_env_file=None)
+
+    assert config.llm_article_batch_size == 3
+
+
 async def test_llm_analysis_service_rejects_blank_relationship_fields(monkeypatch):
     service = LLMAnalysisService()
 

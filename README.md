@@ -115,7 +115,12 @@ Limit concurrent article workers in the parallel article-processing pipeline wit
 
 ```env
 MAX_CONCURRENT_ARTICLES=5
+LLM_ARTICLE_BATCH_SIZE=5
 ```
+
+`LLM_ARTICLE_BATCH_SIZE` controls how many articles a `/rescan` run processes
+before waiting for that batch to finish. Keep it at `5`, or lower it, to reduce
+Gemini requests per minute pressure.
 
 ## Known Limitations
 

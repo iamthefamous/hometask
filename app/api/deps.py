@@ -28,6 +28,7 @@ def get_pipeline_service() -> PipelineService:
         llm=LLMAnalysisService(),
         storage=storage,
         max_concurrent_articles=settings.max_concurrent_articles,
+        llm_article_batch_size=settings.llm_article_batch_size,
     )
 
 

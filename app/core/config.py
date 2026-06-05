@@ -30,6 +30,11 @@ class Settings(BaseSettings):
             "MAX_CONCURRENT_ARTICLES", "MAX_CONCURRENT_AGENTS"
         ),
     )
+    llm_article_batch_size: int = Field(
+        default=5,
+        ge=1,
+        validation_alias=AliasChoices("LLM_ARTICLE_BATCH_SIZE"),
+    )
     request_timeout_seconds: int = 30
     max_llm_article_chars: int = 24000
 

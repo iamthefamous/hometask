@@ -19,12 +19,14 @@ class PipelineService:
         llm: LLMAnalysisService,
         storage: GraphStorageService,
         max_concurrent_articles: int,
+        llm_article_batch_size: int = 5,
     ):
         self.crawler = crawler
         self.extractor = extractor
         self.llm = llm
         self.storage = storage
         self.semaphore = asyncio.Semaphore(max_concurrent_articles)
+        self.llm_article_batch_size = max(1, llm_article_batch_size)
 
     async def process_article(self, url: str) -> ArticleProcessResponse:
         response, _ = await self._process_article_with_metrics(url)
@@ -75,21 +77,31 @@ class PipelineService:
         urls = await self.crawler.get_article_urls(pages)
         logger.info("rescan_start pages=%d urls_found=%d", pages, len(urls))
 
-        tasks = [self._process_article_with_metrics(url) for url in urls]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
         processed = 0
         total_tokens = 0
         errors: list[RescanError] = []
 
-        for url, result in zip(urls, results, strict=False):
-            if isinstance(result, Exception):
-                logger.error("article_process_failed url=%s error=%s", url, str(result))
-                errors.append(RescanError(url=url, error=str(result)))
-            else:
-                _, article_tokens = result
-                processed += 1
-                total_tokens += article_tokens
+        for index, batch in enumerate(self._batch_urls(urls), start=1):
+            logger.info(
+                "rescan_batch_start batch=%d batch_size=%d",
+                index,
+                len(batch),
+            )
+            results = await asyncio.gather(
+                *(self._process_article_with_metrics(url) for url in batch),
+                return_exceptions=True,
+            )
+
+            for url, result in zip(batch, results, strict=False):
+                if isinstance(result, Exception):
+                    logger.error(
+                        "article_process_failed url=%s error=%s", url, str(result)
+                    )
+                    errors.append(RescanError(url=url, error=str(result)))
+                else:
+                    _, article_tokens = result
+                    processed += 1
+                    total_tokens += article_tokens
         logger.info(
             "rescan_done pages=%d processed=%d failed=%d total_tokens=%d",
             pages,
@@ -105,3 +117,9 @@ class PipelineService:
             failed=len(errors),
             errors=errors,
         )
+
+    def _batch_urls(self, urls: list[str]) -> list[list[str]]:
+        return [
+            urls[index : index + self.llm_article_batch_size]
+            for index in range(0, len(urls), self.llm_article_batch_size)
+        ]
