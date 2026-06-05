@@ -7,6 +7,7 @@ from app.repositories.person_repository import PersonRepository
 from app.repositories.relationship_repository import RelationshipRepository
 from app.services.article_extractor_service import ArticleExtractorService
 from app.services.crawler_service import CrawlerService
+from app.services.database_maintenance_service import DatabaseMaintenanceService
 from app.services.graph_storage_service import GraphStorageService
 from app.services.llm_analysis_service import LLMAnalysisService
 from app.services.pipeline_service import PipelineService
@@ -40,3 +41,7 @@ def get_person_repository() -> PersonRepository:
 @lru_cache
 def get_relationship_repository() -> RelationshipRepository:
     return RelationshipRepository(get_database())
+
+
+def get_database_maintenance_service() -> DatabaseMaintenanceService:
+    return DatabaseMaintenanceService(get_database())

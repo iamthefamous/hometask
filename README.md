@@ -48,6 +48,20 @@ MongoDB works well for this MVP because articles, people, and relationships are 
     ```
   - Failure behavior: continues processing when one article fails and reports per-URL errors.
 
+- `POST /cleardb`
+  - Clears graph data from the `articles`, `people`, and `relationships` collections.
+  - Response:
+    ```json
+    {
+      "status": "cleared",
+      "deleted": {
+        "articles": 10,
+        "people": 25,
+        "relationships": 40
+      }
+    }
+    ```
+
 - `GET /people?page=1&limit=20`
   - Returns paginated people with aliases.
 
