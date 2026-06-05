@@ -9,13 +9,15 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from app.core.config import settings
+from app.core.config import settings  # noqa: E402
 
 GRAPH_COLLECTIONS = ["articles", "people", "relationships"]
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Drop graph collections without deleting the database.")
+    parser = argparse.ArgumentParser(
+        description="Drop graph collections without deleting the database."
+    )
     parser.add_argument(
         "--apply",
         action="store_true",

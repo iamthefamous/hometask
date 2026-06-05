@@ -99,34 +99,23 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-## LLM Provider Setup
+## Gemini LLM Setup
 
 Gemini uses the official Google Gen AI SDK:
 
 ```env
-LLM_PROVIDER=gemini
 GEMINI_API_KEY=your_api_key_here
 GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
-`GEMINI_MODEL` is optional and defaults to `gemini-3.1-flash-lite`.
+`GEMINI_MODEL` is optional and defaults to `gemini-3.1-flash-lite`. The
+pipeline uses Gemini only for LLM analysis.
 
 Limit concurrent article workers in the parallel article-processing pipeline with:
 
 ```env
-MAX_CONCURRENT_AGENTS=5
+MAX_CONCURRENT_ARTICLES=5
 ```
-
-For free local usage, run Ollama and set:
-
-```env
-LLM_PROVIDER=ollama
-LLM_BASE_URL=http://localhost:11434/v1
-OPENAI_MODEL=qwen2.5:7b-instruct
-LLM_API_KEY=
-```
-
-Keep `LLM_PROVIDER=mock` if you want a test-only path with no external model call.
 
 ## Known Limitations
 
@@ -204,8 +193,7 @@ python scripts/drop_database.py --apply
 - Improve extraction prompt.
 - Add fixed relationship taxonomy.
 - Add validation prompt.
-- Add model fallback.
-- Add local LLM support documentation.
+- Add retry handling for transient Gemini API failures.
 - Add extraction evaluation dataset.
 - Add confidence scoring.
 - Add hallucination filters.
