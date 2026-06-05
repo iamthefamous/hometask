@@ -11,7 +11,12 @@ class _Pipeline:
             urls_found=2,
             processed=1,
             failed=1,
-            errors=[RescanError(url="https://techcrunch.com/x", error="Could not extract article text")],
+            errors=[
+                RescanError(
+                    url="https://techcrunch.com/x",
+                    error="Could not extract article text",
+                )
+            ],
         )
 
 
